@@ -1,0 +1,328 @@
+// LocalBoost – Prisma Schema
+// DB: PostgreSQL (Supabase)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────
+// USERS & AUTH
+// ─────────────────────────────────────────────────
+enum UserRole {
+  OWNER
+  STAFF
+  ADMIN
+}
+
+model User {
+  id        String   @id @default(uuid())
+  supabaseId String  @unique @map("supabase_id")
+  name      String
+  email     String   @unique
+  role      UserRole @default(OWNER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  ownedBusinesses Business[]
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────
+// BUSINESS
+// ─────────────────────────────────────────────────
+model Business {
+  id          String   @id @default(uuid())
+  name        String
+  industry    String
+  timezone    String   @default("Asia/Nicosia")
+  ownerUserId String   @map("owner_user_id")
+  googleReviewUrl String? @map("google_review_url")
+  onboardingCompleted Boolean @default(false) @map("onboarding_completed")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  owner             User               @relation(fields: [ownerUserId], references: [id])
+  locations         Location[]
+  customers         Customer[]
+  appointments      Appointment[]
+  automationRules   AutomationRule[]
+  messageTemplates  MessageTemplate[]
+  messageJobs       MessageJob[]
+  feedbacks         Feedback[]
+  auditLogs         AuditLog[]
+  billing           Billing?
+
+  @@index([ownerUserId])
+  @@map("businesses")
+}
+
+// ─────────────────────────────────────────────────
+// LOCATIONS
+// ─────────────────────────────────────────────────
+model Location {
+  id         String  @id @default(uuid())
+  businessId String  @map("business_id")
+  name       String
+  address    String?
+  phone      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@index([businessId])
+  @@map("locations")
+}
+
+// ─────────────────────────────────────────────────
+// CUSTOMERS
+// ─────────────────────────────────────────────────
+model Customer {
+  id               String    @id @default(uuid())
+  businessId       String    @map("business_id")
+  fullName         String    @map("full_name")
+  phone            String?
+  email            String?
+  consentSms       Boolean   @default(false) @map("consent_sms")
+  consentEmail     Boolean   @default(false) @map("consent_email")
+  consentSource    String?   @map("consent_source") // "manual_import" | "form" | "verbal"
+  consentTimestamp DateTime? @map("consent_timestamp")
+  optedOutSms      Boolean   @default(false) @map("opted_out_sms")
+  optedOutEmail    Boolean   @default(false) @map("opted_out_email")
+  deletedAt        DateTime? @map("deleted_at") // soft delete
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+  messageJobs  MessageJob[]
+  feedbacks    Feedback[]
+
+  @@index([businessId])
+  @@index([phone])
+  @@map("customers")
+}
+
+// ─────────────────────────────────────────────────
+// APPOINTMENTS
+// ─────────────────────────────────────────────────
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+model Appointment {
+  id          String            @id @default(uuid())
+  businessId  String            @map("business_id")
+  locationId  String?           @map("location_id")
+  customerId  String            @map("customer_id")
+  serviceName String            @map("service_name")
+  startAt     DateTime          @map("start_at")
+  endAt       DateTime?         @map("end_at")
+  status      AppointmentStatus @default(SCHEDULED)
+  notes       String?
+  confirmToken String?          @unique @map("confirm_token")
+  cancelToken  String?          @unique @map("cancel_token")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  location    Location?     @relation(fields: [locationId], references: [id])
+  customer    Customer      @relation(fields: [customerId], references: [id])
+  messageJobs MessageJob[]
+  feedbacks   Feedback[]
+
+  @@index([businessId])
+  @@index([customerId])
+  @@index([startAt])
+  @@index([status])
+  @@map("appointments")
+}
+
+// ─────────────────────────────────────────────────
+// AUTOMATION RULES
+// ─────────────────────────────────────────────────
+enum AutomationRuleType {
+  REMINDER_24H
+  REMINDER_2H
+  FEEDBACK_1H
+  REVIEW_FOLLOWUP_48H
+}
+
+enum MessageChannel {
+  SMS
+  EMAIL
+  BOTH
+}
+
+model AutomationRule {
+  id             String             @id @default(uuid())
+  businessId     String             @map("business_id")
+  type           AutomationRuleType
+  enabled        Boolean            @default(true)
+  channel        MessageChannel     @default(BOTH)
+  templateId     String?            @map("template_id")
+  delayMinutes   Int                @default(0) @map("delay_minutes")
+  conditionsJson Json?              @map("conditions_json")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  business Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  template MessageTemplate? @relation(fields: [templateId], references: [id])
+
+  @@unique([businessId, type])
+  @@index([businessId])
+  @@map("automation_rules")
+}
+
+// ─────────────────────────────────────────────────
+// MESSAGE TEMPLATES
+// ─────────────────────────────────────────────────
+enum TemplateLanguage {
+  EN
+  EL
+}
+
+model MessageTemplate {
+  id             String          @id @default(uuid())
+  businessId     String          @map("business_id")
+  channel        MessageChannel
+  language       TemplateLanguage
+  name           String
+  subject        String?         // for email
+  body           String
+  variablesJson  Json?           @map("variables_json")
+  isDefault      Boolean         @default(false) @map("is_default")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  business        Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  automationRules AutomationRule[]
+
+  @@index([businessId])
+  @@map("message_templates")
+}
+
+// ─────────────────────────────────────────────────
+// MESSAGE JOBS
+// ─────────────────────────────────────────────────
+enum MessageJobStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model MessageJob {
+  id                String           @id @default(uuid())
+  businessId        String           @map("business_id")
+  customerId        String           @map("customer_id")
+  appointmentId     String?          @map("appointment_id")
+  channel           MessageChannel
+  ruleType          AutomationRuleType? @map("rule_type")
+  sendAt            DateTime         @map("send_at")
+  status            MessageJobStatus @default(QUEUED)
+  providerMessageId String?          @map("provider_message_id")
+  errorMessage      String?          @map("error_message")
+  sentAt            DateTime?        @map("sent_at")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer    Customer     @relation(fields: [customerId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([businessId])
+  @@index([sendAt, status])
+  @@index([appointmentId])
+  @@map("message_jobs")
+}
+
+// ─────────────────────────────────────────────────
+// FEEDBACK
+// ─────────────────────────────────────────────────
+model Feedback {
+  id            String   @id @default(uuid())
+  businessId    String   @map("business_id")
+  appointmentId String   @map("appointment_id")
+  customerId    String   @map("customer_id")
+  rating        Int      // 1–5
+  comment       String?
+  token         String   @unique // for secure form access
+  submittedAt   DateTime? @map("submitted_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  business    Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  customer    Customer    @relation(fields: [customerId], references: [id])
+
+  @@index([businessId])
+  @@index([appointmentId])
+  @@map("feedbacks")
+}
+
+// ─────────────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────────────
+model AuditLog {
+  id           String   @id @default(uuid())
+  businessId   String?  @map("business_id")
+  actorUserId  String?  @map("actor_user_id")
+  action       String
+  entity       String
+  entityId     String?  @map("entity_id")
+  metadataJson Json?    @map("metadata_json")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  business  Business? @relation(fields: [businessId], references: [id])
+  actorUser User?     @relation(fields: [actorUserId], references: [id])
+
+  @@index([businessId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────────
+// BILLING
+// ─────────────────────────────────────────────────
+enum BillingPlan {
+  STARTER
+  PRO
+  PREMIUM
+}
+
+enum BillingStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELLED
+  INCOMPLETE
+}
+
+model Billing {
+  id                   String        @id @default(uuid())
+  businessId           String        @unique @map("business_id")
+  stripeCustomerId     String?       @unique @map("stripe_customer_id")
+  stripeSubscriptionId String?       @unique @map("stripe_subscription_id")
+  plan                 BillingPlan   @default(STARTER)
+  status               BillingStatus @default(TRIALING)
+  currentPeriodEnd     DateTime?     @map("current_period_end")
+  messagesUsedThisMonth Int          @default(0) @map("messages_used_this_month")
+  usagePeriodStart     DateTime?     @map("usage_period_start")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("billing")
+}
