@@ -1,4 +1,4 @@
-import * as postmark from "@postmark/postmark";
+import * as postmark from "postmark";
 
 let _client: postmark.ServerClient | null = null;
 
