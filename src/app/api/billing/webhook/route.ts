@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { BillingPlan, BillingStatus } from "@prisma/client";
 import Stripe from "stripe";
 
-export const config = { api: { bodyParser: false } };
 
 // Parse the plan from Stripe metadata or price lookup
 function parsePlan(str?: string): BillingPlan {
