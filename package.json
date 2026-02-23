@@ -16,7 +16,7 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "@postmark/postmark": "^4.0.5",
+    "postmark": "^4.0.5",
     "@prisma/client": "^5.14.0",
     "@stripe/stripe-js": "^3.5.0",
     "@supabase/supabase-js": "^2.43.5",
