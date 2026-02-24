@@ -6,9 +6,10 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl text-brand-700">
-            <span className="text-2xl">🚀</span> LocalBoost
+            <span className="text-2xl">ð</span> LocalBoost
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-600">
+            <Link href="/browse" className="hover:text-brand-600 transition-colors">Find providers</Link>
             <Link href="/pricing" className="hover:text-brand-600 transition-colors">Pricing</Link>
             <Link href="/industries" className="hover:text-brand-600 transition-colors">Industries</Link>
             <Link href="/faq" className="hover:text-brand-600 transition-colors">FAQ</Link>
@@ -16,7 +17,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           </nav>
           <div className="flex items-center gap-3">
             <Link href="/login" className="btn-ghost text-sm">Log in</Link>
-            <Link href="/signup" className="btn-primary text-sm">Start free →</Link>
+            <Link href="/signup" className="btn-primary text-sm">Start free â</Link>
           </div>
         </div>
       </header>
@@ -27,8 +28,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
             <div>
-              <div className="text-white font-bold text-lg mb-3">🚀 LocalBoost</div>
-              <p className="text-sm">Helping Cyprus businesses reduce no-shows and grow reviews — automatically.</p>
+              <div className="text-white font-bold text-lg mb-3">ð LocalBoost</div>
+              <p className="text-sm">Helping Cyprus businesses reduce no-shows and grow reviews â automatically.</p>
             </div>
             <div>
               <h4 className="text-white text-sm font-semibold mb-3 uppercase tracking-wide">Product</h4>
@@ -47,11 +48,11 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             </div>
             <div>
               <h4 className="text-white text-sm font-semibold mb-3 uppercase tracking-wide">Get Started</h4>
-              <Link href="/signup" className="btn-primary text-sm inline-block">Try Free →</Link>
+              <Link href="/signup" className="btn-primary text-sm inline-block">Try Free â</Link>
             </div>
           </div>
           <div className="border-t border-gray-800 pt-6 text-sm text-center">
-            © {new Date().getFullYear()} LocalBoost. Built for Cyprus businesses.
+            Â© {new Date().getFullYear()} LocalBoost. Built for Cyprus businesses.
           </div>
         </div>
       </footer>
