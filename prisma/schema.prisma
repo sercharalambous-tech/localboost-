@@ -1,4 +1,4 @@
-// LocalBoost – Prisma Schema
+// LocalBoost â Prisma Schema
 // DB: PostgreSQL (Supabase)
 
 generator client {
@@ -10,9 +10,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 // USERS & AUTH
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 enum UserRole {
   OWNER
   STAFF
@@ -20,13 +20,13 @@ enum UserRole {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  supabaseId String  @unique @map("supabase_id")
-  name      String
-  email     String   @unique
-  role      UserRole @default(OWNER)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         String   @id @default(uuid())
+  supabaseId String   @unique @map("supabase_id")
+  name       String
+  email      String   @unique
+  role       UserRole @default(OWNER)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   ownedBusinesses Business[]
   auditLogs       AuditLog[]
@@ -34,41 +34,48 @@ model User {
   @@map("users")
 }
 
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 // BUSINESS
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 model Business {
-  id          String   @id @default(uuid())
-  name        String
-  industry    String
-  timezone    String   @default("Asia/Nicosia")
-  ownerUserId String   @map("owner_user_id")
-  googleReviewUrl String? @map("google_review_url")
-  onboardingCompleted Boolean @default(false) @map("onboarding_completed")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id                  String   @id @default(uuid())
+  name                String
+  industry            String
+  timezone            String   @default("Asia/Nicosia")
+  ownerUserId         String   @map("owner_user_id")
+  googleReviewUrl     String?  @map("google_review_url")
+  onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
-  owner             User               @relation(fields: [ownerUserId], references: [id])
-  locations         Location[]
-  customers         Customer[]
-  appointments      Appointment[]
-  automationRules   AutomationRule[]
-  messageTemplates  MessageTemplate[]
-  messageJobs       MessageJob[]
-  feedbacks         Feedback[]
-  auditLogs         AuditLog[]
-  billing           Billing?
+  owner            User             @relation(fields: [ownerUserId], references: [id])
+  locations        Location[]
+  customers        Customer[]
+  appointments     Appointment[]
+  automationRules  AutomationRule[]
+  messageTemplates MessageTemplate[]
+  messageJobs      MessageJob[]
+  feedbacks        Feedback[]
+  auditLogs        AuditLog[]
+  billing          Billing?
+
+  // ââ Marketplace (new) ââ
+  providerProfile  ProviderProfile?
+  services         Service[]
+  workingHours     WorkingHours[]
+  blockedSlots     BlockedSlot[]
+  publicBookings   PublicBooking[]
 
   @@index([ownerUserId])
   @@map("businesses")
 }
 
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 // LOCATIONS
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 model Location {
-  id         String  @id @default(uuid())
-  businessId String  @map("business_id")
+  id         String   @id @default(uuid())
+  businessId String   @map("business_id")
   name       String
   address    String?
   phone      String?
@@ -81,9 +88,9 @@ model Location {
   @@map("locations")
 }
 
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 // CUSTOMERS
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 model Customer {
   id               String    @id @default(uuid())
   businessId       String    @map("business_id")
@@ -92,27 +99,28 @@ model Customer {
   email            String?
   consentSms       Boolean   @default(false) @map("consent_sms")
   consentEmail     Boolean   @default(false) @map("consent_email")
-  consentSource    String?   @map("consent_source") // "manual_import" | "form" | "verbal"
+  consentSource    String?   @map("consent_source")
   consentTimestamp DateTime? @map("consent_timestamp")
   optedOutSms      Boolean   @default(false) @map("opted_out_sms")
   optedOutEmail    Boolean   @default(false) @map("opted_out_email")
-  deletedAt        DateTime? @map("deleted_at") // soft delete
+  deletedAt        DateTime? @map("deleted_at")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
-  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  appointments Appointment[]
-  messageJobs  MessageJob[]
-  feedbacks    Feedback[]
+  business       Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments   Appointment[]
+  messageJobs    MessageJob[]
+  feedbacks      Feedback[]
+  publicBookings PublicBooking[]
 
   @@index([businessId])
   @@index([phone])
   @@map("customers")
 }
 
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 // APPOINTMENTS
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 enum AppointmentStatus {
   SCHEDULED
   CONFIRMED
@@ -122,25 +130,26 @@ enum AppointmentStatus {
 }
 
 model Appointment {
-  id          String            @id @default(uuid())
-  businessId  String            @map("business_id")
-  locationId  String?           @map("location_id")
-  customerId  String            @map("customer_id")
-  serviceName String            @map("service_name")
-  startAt     DateTime          @map("start_at")
-  endAt       DateTime?         @map("end_at")
-  status      AppointmentStatus @default(SCHEDULED)
-  notes       String?
-  confirmToken String?          @unique @map("confirm_token")
-  cancelToken  String?          @unique @map("cancel_token")
-  createdAt   DateTime          @default(now()) @map("created_at")
-  updatedAt   DateTime          @updatedAt @map("updated_at")
+  id           String            @id @default(uuid())
+  businessId   String            @map("business_id")
+  locationId   String?           @map("location_id")
+  customerId   String            @map("customer_id")
+  serviceName  String            @map("service_name")
+  startAt      DateTime          @map("start_at")
+  endAt        DateTime?         @map("end_at")
+  status       AppointmentStatus @default(SCHEDULED)
+  notes        String?
+  confirmToken String?           @unique @map("confirm_token")
+  cancelToken  String?           @unique @map("cancel_token")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
 
-  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  location    Location?     @relation(fields: [locationId], references: [id])
-  customer    Customer      @relation(fields: [customerId], references: [id])
-  messageJobs MessageJob[]
-  feedbacks   Feedback[]
+  business      Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  location      Location?      @relation(fields: [locationId], references: [id])
+  customer      Customer       @relation(fields: [customerId], references: [id])
+  messageJobs   MessageJob[]
+  feedbacks     Feedback[]
+  publicBooking PublicBooking?
 
   @@index([businessId])
   @@index([customerId])
@@ -149,9 +158,9 @@ model Appointment {
   @@map("appointments")
 }
 
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 // AUTOMATION RULES
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 enum AutomationRuleType {
   REMINDER_24H
   REMINDER_2H
@@ -177,34 +186,34 @@ model AutomationRule {
   createdAt      DateTime           @default(now()) @map("created_at")
   updatedAt      DateTime           @updatedAt @map("updated_at")
 
-  business Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  template MessageTemplate? @relation(fields: [templateId], references: [id])
+  business Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  template MessageTemplate?  @relation(fields: [templateId], references: [id])
 
   @@unique([businessId, type])
   @@index([businessId])
   @@map("automation_rules")
 }
 
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 // MESSAGE TEMPLATES
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 enum TemplateLanguage {
   EN
   EL
 }
 
 model MessageTemplate {
-  id             String          @id @default(uuid())
-  businessId     String          @map("business_id")
-  channel        MessageChannel
-  language       TemplateLanguage
-  name           String
-  subject        String?         // for email
-  body           String
-  variablesJson  Json?           @map("variables_json")
-  isDefault      Boolean         @default(false) @map("is_default")
-  createdAt      DateTime        @default(now()) @map("created_at")
-  updatedAt      DateTime        @updatedAt @map("updated_at")
+  id            String           @id @default(uuid())
+  businessId    String           @map("business_id")
+  channel       MessageChannel
+  language      TemplateLanguage
+  name          String
+  subject       String?
+  body          String
+  variablesJson Json?            @map("variables_json")
+  isDefault     Boolean          @default(false) @map("is_default")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
 
   business        Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
   automationRules AutomationRule[]
@@ -213,9 +222,9 @@ model MessageTemplate {
   @@map("message_templates")
 }
 
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 // MESSAGE JOBS
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 enum MessageJobStatus {
   QUEUED
   SENT
@@ -224,19 +233,19 @@ enum MessageJobStatus {
 }
 
 model MessageJob {
-  id                String           @id @default(uuid())
-  businessId        String           @map("business_id")
-  customerId        String           @map("customer_id")
-  appointmentId     String?          @map("appointment_id")
+  id                String              @id @default(uuid())
+  businessId        String              @map("business_id")
+  customerId        String              @map("customer_id")
+  appointmentId     String?             @map("appointment_id")
   channel           MessageChannel
   ruleType          AutomationRuleType? @map("rule_type")
-  sendAt            DateTime         @map("send_at")
-  status            MessageJobStatus @default(QUEUED)
-  providerMessageId String?          @map("provider_message_id")
-  errorMessage      String?          @map("error_message")
-  sentAt            DateTime?        @map("sent_at")
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
+  sendAt            DateTime            @map("send_at")
+  status            MessageJobStatus    @default(QUEUED)
+  providerMessageId String?             @map("provider_message_id")
+  errorMessage      String?             @map("error_message")
+  sentAt            DateTime?           @map("sent_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
 
   business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer    Customer     @relation(fields: [customerId], references: [id])
@@ -248,19 +257,19 @@ model MessageJob {
   @@map("message_jobs")
 }
 
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 // FEEDBACK
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 model Feedback {
-  id            String   @id @default(uuid())
-  businessId    String   @map("business_id")
-  appointmentId String   @map("appointment_id")
-  customerId    String   @map("customer_id")
-  rating        Int      // 1–5
+  id            String    @id @default(uuid())
+  businessId    String    @map("business_id")
+  appointmentId String    @map("appointment_id")
+  customerId    String    @map("customer_id")
+  rating        Int
   comment       String?
-  token         String   @unique // for secure form access
+  token         String    @unique
   submittedAt   DateTime? @map("submitted_at")
-  createdAt     DateTime @default(now()) @map("created_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
 
   business    Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
   appointment Appointment @relation(fields: [appointmentId], references: [id])
@@ -271,9 +280,9 @@ model Feedback {
   @@map("feedbacks")
 }
 
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 // AUDIT LOG
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 model AuditLog {
   id           String   @id @default(uuid())
   businessId   String?  @map("business_id")
@@ -292,9 +301,9 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 // BILLING
-// ─────────────────────────────────────────────────
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
 enum BillingPlan {
   STARTER
   PRO
@@ -310,19 +319,176 @@ enum BillingStatus {
 }
 
 model Billing {
-  id                   String        @id @default(uuid())
-  businessId           String        @unique @map("business_id")
-  stripeCustomerId     String?       @unique @map("stripe_customer_id")
-  stripeSubscriptionId String?       @unique @map("stripe_subscription_id")
-  plan                 BillingPlan   @default(STARTER)
-  status               BillingStatus @default(TRIALING)
-  currentPeriodEnd     DateTime?     @map("current_period_end")
-  messagesUsedThisMonth Int          @default(0) @map("messages_used_this_month")
-  usagePeriodStart     DateTime?     @map("usage_period_start")
-  createdAt            DateTime      @default(now()) @map("created_at")
-  updatedAt            DateTime      @updatedAt @map("updated_at")
+  id                    String        @id @default(uuid())
+  businessId            String        @unique @map("business_id")
+  stripeCustomerId      String?       @unique @map("stripe_customer_id")
+  stripeSubscriptionId  String?       @unique @map("stripe_subscription_id")
+  plan                  BillingPlan   @default(STARTER)
+  status                BillingStatus @default(TRIALING)
+  currentPeriodEnd      DateTime?     @map("current_period_end")
+  messagesUsedThisMonth Int           @default(0) @map("messages_used_this_month")
+  usagePeriodStart      DateTime?     @map("usage_period_start")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
 
   business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@map("billing")
+}
+
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
+// MARKETPLACE FEATURE
+// âââââââââââââââââââââââââââââââââââââââââââââââââ
+
+enum IndustryCategory {
+  BARBER_MEN
+  HAIR_SALON_WOMEN
+  HAIR_SALON_UNISEX
+  AESTHETICIAN
+  LASER_CLINIC
+  MASSAGE
+  PERSONAL_TRAINER
+  PILATES
+  YOGA
+  PHYSIOTHERAPY
+  NAIL_SALON
+  TATTOO
+  NUTRITION
+  MAKEUP_ARTIST
+  OSTEOPATH
+  PSYCHOLOGIST
+  DENTAL
+  OTHER
+}
+
+enum PublicBookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+// Provider's public profile â 1-to-1 with Business
+model ProviderProfile {
+  id               String           @id @default(uuid())
+  businessId       String           @unique @map("business_id")
+  slug             String           @unique
+  displayName      String           @map("display_name")
+  bio              String?
+  profileImageUrl  String?          @map("profile_image_url")
+  coverImageUrl    String?          @map("cover_image_url")
+  isPublic         Boolean          @default(false) @map("is_public")
+  industryCategory IndustryCategory @map("industry_category")
+  city             String?
+  address          String?
+  phone            String?
+  instagramUrl     String?          @map("instagram_url")
+  facebookUrl      String?          @map("facebook_url")
+  websiteUrl       String?          @map("website_url")
+  avgRating        Float            @default(0) @map("avg_rating")
+  reviewCount      Int              @default(0) @map("review_count")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  business       Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  services       Service[]
+  workingHours   WorkingHours[]
+  blockedSlots   BlockedSlot[]
+  publicBookings PublicBooking[]
+
+  @@index([industryCategory])
+  @@index([city])
+  @@index([isPublic])
+  @@map("provider_profiles")
+}
+
+// Service catalog â what the provider offers
+model Service {
+  id              String   @id @default(uuid())
+  businessId      String   @map("business_id")
+  profileId       String   @map("provider_profile_id")
+  name            String
+  description     String?
+  durationMinutes Int      @map("duration_minutes")
+  price           Decimal  @db.Decimal(10, 2)
+  currency        String   @default("EUR")
+  isActive        Boolean  @default(true) @map("is_active")
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  business       Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  profile        ProviderProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  publicBookings PublicBooking[]
+
+  @@index([businessId])
+  @@index([profileId])
+  @@map("services")
+}
+
+// Weekly schedule â one row per active day (0=Sun â¦ 6=Sat)
+model WorkingHours {
+  id         String   @id @default(uuid())
+  businessId String   @map("business_id")
+  profileId  String   @map("provider_profile_id")
+  dayOfWeek  Int      @map("day_of_week")
+  startTime  String   @map("start_time") // "09:00"
+  endTime    String   @map("end_time")   // "18:00"
+  isActive   Boolean  @default(true) @map("is_active")
+
+  business Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  profile  ProviderProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, dayOfWeek])
+  @@index([businessId])
+  @@map("working_hours")
+}
+
+// Manual blocks â holidays, lunch breaks, time off
+model BlockedSlot {
+  id         String   @id @default(uuid())
+  businessId String   @map("business_id")
+  profileId  String   @map("provider_profile_id")
+  date       DateTime @db.Date
+  startTime  String   @map("start_time") // "13:00"
+  endTime    String   @map("end_time")   // "14:00"
+  reason     String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  business Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  profile  ProviderProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([businessId, date])
+  @@map("blocked_slots")
+}
+
+// Public booking â made by guest or logged-in customer via public profile
+model PublicBooking {
+  id            String              @id @default(uuid())
+  businessId    String              @map("business_id")
+  profileId     String              @map("provider_profile_id")
+  serviceId     String              @map("service_id")
+  customerId    String?             @map("customer_id")
+  appointmentId String?             @unique @map("appointment_id")
+  guestName     String?             @map("guest_name")
+  guestPhone    String?             @map("guest_phone")
+  guestEmail    String?             @map("guest_email")
+  consentSms    Boolean             @default(false) @map("consent_sms")
+  consentEmail  Boolean             @default(false) @map("consent_email")
+  startAt       DateTime            @map("start_at")
+  notes         String?
+  status        PublicBookingStatus @default(PENDING)
+  confirmToken  String?             @unique @map("confirm_token")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+
+  business    Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  profile     ProviderProfile @relation(fields: [profileId], references: [id])
+  service     Service         @relation(fields: [serviceId], references: [id])
+  customer    Customer?       @relation(fields: [customerId], references: [id])
+  appointment Appointment?    @relation(fields: [appointmentId], references: [id])
+
+  @@index([businessId])
+  @@index([profileId])
+  @@index([startAt])
+  @@map("public_bookings")
 }
