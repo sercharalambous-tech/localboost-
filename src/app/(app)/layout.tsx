@@ -4,20 +4,44 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { getBrowserClient } from "@/lib/supabase";
 
-const nav = [
-  { href: "/dashboard", icon: "📊", label: "Dashboard" },
-  { href: "/appointments", icon: "📅", label: "Appointments" },
-  { href: "/customers", icon: "👥", label: "Customers" },
-  { href: "/automations", icon: "⚡", label: "Automations" },
-  { href: "/templates", icon: "📝", label: "Templates" },
-  { href: "/billing", icon: "💳", label: "Billing" },
-  { href: "/settings", icon: "⚙️", label: "Settings" },
+interface NavItem {
+  href:     string;
+  label:    string;
+  section:  string;
+}
+
+const NAV: NavItem[] = [
+  // ââ Core ââ
+  { href: "/dashboard",            label: "Dashboard",      section: "core" },
+  { href: "/appointments",          label: "Appointments",   section: "core" },
+  { href: "/customers",             label: "Customers",      section: "core" },
+
+  // ââ Booking (marketplace) ââ
+  { href: "/services",              label: "Services",       section: "booking" },
+  { href: "/settings/profile",      label: "Public Profile", section: "booking" },
+  { href: "/settings/availability", label: "Availability",   section: "booking" },
+  { href: "/settings/reviews",      label: "Reviews",        section: "booking" },
+
+  // ââ Automation ââ
+  { href: "/automations",           label: "Automations",    section: "automation" },
+  { href: "/templates",             label: "Templates",      section: "automation" },
+
+  // ââ Account ââ
+  { href: "/billing",               label: "Billing",        section: "account" },
+  { href: "/settings",              label: "Settings",       section: "account" },
+];
+
+const SECTIONS = [
+  { key: "core",       label: null },
+  { key: "booking",    label: "Online Booking" },
+  { key: "automation", label: "Automation" },
+  { key: "account",    label: "Account" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const router   = useRouter();
+  const [open, setOpen] = useState(false);
 
   async function handleSignOut() {
     const supabase = getBrowserClient();
@@ -25,60 +49,89 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.push("/login");
   }
 
-  const Sidebar = () => (
-    <aside className={`flex flex-col bg-gray-900 text-white w-60 h-full fixed left-0 top-0 z-40 transition-transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0`}>
-      <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-700">
-        <span className="text-2xl">🚀</span>
-        <span className="font-bold text-lg">LocalBoost</span>
+  function isActive(href: string) {
+    if (href === "/settings") return pathname === "/settings";
+    return pathname === href || pathname.startsWith(href + "/");
+  }
+
+  const SidebarContent = () => (
+    <>
+      <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+        <Link href="/dashboard" className="font-semibold text-sm text-gray-900 tracking-tight">
+          LocalBoost
+        </Link>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {nav.map(({ href, icon, label }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
+      <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+        {SECTIONS.map(({ key, label }) => {
+          const items = NAV.filter((n) => n.section === key);
           return (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                active
-                  ? "bg-brand-600 text-white"
-                  : "text-gray-300 hover:bg-gray-800 hover:text-white"
-              }`}
-            >
-              <span className="text-lg">{icon}</span>
-              {label}
-            </Link>
+            <div key={key}>
+              {label && (
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-1">{label}</p>
+              )}
+              {items.map(({ href, label: itemLabel }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm transition-colors ${
+                    isActive(href)
+                      ? "bg-gray-100 text-gray-900 font-medium"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  {itemLabel}
+                </Link>
+              ))}
+            </div>
           );
         })}
       </nav>
 
-      <div className="px-3 pb-4 border-t border-gray-700 pt-4">
+      <div className="px-3 pb-5 pt-3 border-t border-gray-100">
         <button
           onClick={handleSignOut}
-          className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-gray-800 hover:text-white w-full transition-colors"
+          className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-400 hover:bg-gray-50 hover:text-gray-700 transition-colors"
         >
-          <span className="text-lg">🚪</span> Sign out
+          Sign out
         </button>
       </div>
-    </aside>
+    </>
   );
 
   return (
     <div className="flex h-full bg-gray-50">
-      <Sidebar />
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex flex-col w-52 h-screen fixed left-0 top-0 bg-white border-r border-gray-100 z-40">
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile overlay + sidebar */}
+      {open && (
+        <>
+          <div className="fixed inset-0 bg-black/30 z-40 lg:hidden" onClick={() => setOpen(false)} />
+          <aside className="fixed left-0 top-0 bottom-0 w-52 bg-white border-r border-gray-100 z-50 flex flex-col lg:hidden">
+            <SidebarContent />
+          </aside>
+        </>
       )}
 
-      <div className="flex-1 flex flex-col lg:pl-60 min-h-screen">
+      {/* Content area */}
+      <div className="flex-1 flex flex-col lg:pl-52 min-h-screen">
         {/* Mobile top bar */}
-        <header className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
-          <button onClick={() => setSidebarOpen(true)} className="text-gray-600 text-2xl">☰</button>
-          <span className="font-bold text-brand-700">🚀 LocalBoost</span>
+        <header className="lg:hidden sticky top-0 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 z-30">
+          <button onClick={() => setOpen(true)} className="text-gray-500 p-1">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <span className="font-semibold text-sm text-gray-900">LocalBoost</span>
         </header>
 
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-6 lg:p-8 max-w-5xl mx-auto w-full">
+          {children}
+        </main>
       </div>
     </div>
   );
